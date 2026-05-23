@@ -1,1 +1,1590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cryptocurrency Market Data Analysis Bot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #020504;
+    --surface: #080e0a;
+    --surface2: #0d1a10;
+    --green: #00ff6a;
+    --green-dim: #00cc55;
+    --green-dark: #003d1a;
+    --green-glow: rgba(0,255,106,0.15);
+    --green-glow-strong: rgba(0,255,106,0.35);
+    --border: rgba(0,255,106,0.18);
+    --border-strong: rgba(0,255,106,0.45);
+    --text: #c8ffe0;
+    --text-dim: #6aad85;
+    --text-muted: #2e6642;
+    --font-display: 'Orbitron', monospace;
+    --font-body: 'Rajdhani', sans-serif;
+    --font-mono: 'Share Tech Mono', monospace;
+  }
 
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--text);
+    font-family: var(--font-body);
+    overflow-x: hidden;
+    line-height: 1.6;
+  }
+
+  /* GRID OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,255,106,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,255,106,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ─── NAV ─────────────────────────────────────────────── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 60px;
+    background: linear-gradient(180deg, rgba(2,5,4,0.95) 0%, rgba(2,5,4,0.0) 100%);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(0,255,106,0.06);
+  }
+
+  .nav-logo {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.25em;
+    color: var(--green);
+    text-transform: uppercase;
+    opacity: 0.9;
+  }
+
+  .nav-links {
+    display: flex;
+    gap: 36px;
+    list-style: none;
+  }
+
+  .nav-links a {
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: color 0.25s;
+  }
+
+  .nav-links a:hover { color: var(--green); }
+
+  .nav-cta {
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--green);
+    text-decoration: none;
+    border: 1px solid var(--border-strong);
+    padding: 9px 22px;
+    transition: all 0.3s;
+    background: transparent;
+  }
+
+  .nav-cta:hover {
+    background: var(--green-glow);
+    box-shadow: 0 0 20px var(--green-glow-strong);
+  }
+
+  /* ─── HERO ────────────────────────────────────────────── */
+  #hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    overflow: hidden;
+    padding: 120px 60px 80px;
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background-image: url('Title_Pictue.png');
+    background-size: cover;
+    background-position: center top;
+    background-repeat: no-repeat;
+    filter: brightness(0.28) saturate(1.4);
+    z-index: 0;
+  }
+
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 70% 60% at 50% 40%, rgba(0,255,106,0.07) 0%, transparent 70%),
+      linear-gradient(180deg, rgba(2,5,4,0.2) 0%, rgba(2,5,4,0.6) 60%, var(--black) 100%);
+    z-index: 1;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    max-width: 900px;
+  }
+
+  .hero-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.35em;
+    color: var(--green);
+    text-transform: uppercase;
+    margin-bottom: 28px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.2s forwards;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .hero-label::before {
+    content: '';
+    display: inline-block;
+    width: 32px;
+    height: 1px;
+    background: var(--green);
+  }
+
+  .hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(36px, 6vw, 80px);
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    background: linear-gradient(135deg, #ffffff 0%, #a8ffcc 40%, var(--green) 70%, #00cc55 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+    margin-bottom: 28px;
+    opacity: 0;
+    animation: fadeUp 0.9s 0.4s forwards;
+    filter: drop-shadow(0 0 40px rgba(0,255,106,0.25));
+  }
+
+  .hero-subtitle {
+    font-family: var(--font-body);
+    font-size: 16px;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    color: var(--text-dim);
+    max-width: 620px;
+    line-height: 1.7;
+    margin-bottom: 52px;
+    opacity: 0;
+    animation: fadeUp 0.9s 0.6s forwards;
+  }
+
+  .hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    opacity: 0;
+    animation: fadeUp 0.9s 0.8s forwards;
+  }
+
+  .btn-primary {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--black);
+    background: var(--green);
+    padding: 14px 36px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s;
+    clip-path: polygon(8px 0%, 100% 0%, calc(100% - 8px) 100%, 0% 100%);
+  }
+
+  .btn-primary:hover {
+    background: #33ff88;
+    box-shadow: 0 0 40px rgba(0,255,106,0.5);
+    transform: translateY(-2px);
+  }
+
+  .btn-ghost {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 13px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+    padding: 13px 28px;
+    transition: all 0.3s;
+  }
+
+  .btn-ghost:hover {
+    color: var(--green);
+    border-color: var(--border-strong);
+    background: var(--green-glow);
+  }
+
+  .hero-stats {
+    position: absolute;
+    right: 60px;
+    bottom: 80px;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    opacity: 0;
+    animation: fadeLeft 1s 1s forwards;
+  }
+
+  .hero-stat {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .hero-stat span {
+    color: var(--green);
+    font-weight: 700;
+  }
+
+  .hero-stat::before {
+    content: '▸';
+    color: var(--green);
+    font-size: 8px;
+  }
+
+  .scroll-indicator {
+    position: absolute;
+    bottom: 32px;
+    left: 60px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    opacity: 0;
+    animation: fadeUp 1s 1.2s forwards;
+  }
+
+  .scroll-line {
+    width: 40px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--green-dim));
+    animation: pulseWidth 2s infinite;
+  }
+
+  /* ─── SECTIONS SHARED ─────────────────────────────────── */
+  section {
+    position: relative;
+    z-index: 1;
+    padding: 100px 60px;
+  }
+
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.4em;
+    color: var(--green);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .section-label::after {
+    content: '';
+    flex: 1;
+    max-width: 60px;
+    height: 1px;
+    background: var(--border-strong);
+  }
+
+  .section-title {
+    font-family: var(--font-display);
+    font-size: clamp(24px, 3.5vw, 44px);
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: #e0fff0;
+    margin-bottom: 20px;
+    line-height: 1.15;
+  }
+
+  .section-desc {
+    font-size: 15px;
+    color: var(--text-dim);
+    max-width: 600px;
+    line-height: 1.75;
+    margin-bottom: 60px;
+  }
+
+  /* ─── OVERVIEW ────────────────────────────────────────── */
+  #overview {
+    background: linear-gradient(180deg, var(--black) 0%, var(--surface) 100%);
+  }
+
+  .overview-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: start;
+  }
+
+  .overview-visual {
+    position: relative;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    overflow: hidden;
+  }
+
+  .overview-visual::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--green-glow) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  .overview-img {
+    width: 100%;
+    height: 320px;
+    object-fit: cover;
+    display: block;
+    opacity: 0.85;
+    mix-blend-mode: luminosity;
+    filter: brightness(0.9) saturate(1.2) hue-rotate(-10deg);
+    transition: opacity 0.4s;
+  }
+
+  .overview-img:hover { opacity: 1; }
+
+  .overview-img-label {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    padding: 10px 16px;
+    background: linear-gradient(0deg, rgba(2,5,4,0.9) 0%, transparent 100%);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--green);
+    text-transform: uppercase;
+  }
+
+  .overview-points {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .overview-point {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    padding: 18px 20px;
+    border: 1px solid rgba(0,255,106,0.08);
+    background: rgba(0,255,106,0.02);
+    transition: all 0.3s;
+    cursor: default;
+  }
+
+  .overview-point:hover {
+    border-color: var(--border-strong);
+    background: var(--green-glow);
+    transform: translateX(4px);
+  }
+
+  .point-icon {
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--border-strong);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: var(--green);
+    flex-shrink: 0;
+    margin-top: 2px;
+    font-family: var(--font-mono);
+    font-weight: 700;
+  }
+
+  .point-content h4 {
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #d0ffe8;
+    margin-bottom: 4px;
+  }
+
+  .point-content p {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.55;
+  }
+
+  /* ─── CAPABILITIES (METRICS) ──────────────────────────── */
+  #capabilities {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .cap-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+  }
+
+  .cap-card {
+    background: var(--surface2);
+    padding: 36px 28px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.35s;
+    cursor: default;
+  }
+
+  .cap-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--green), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .cap-card:hover::before { opacity: 1; }
+
+  .cap-card:hover {
+    background: rgba(0,255,106,0.04);
+  }
+
+  .cap-icon {
+    font-size: 22px;
+    margin-bottom: 18px;
+    filter: drop-shadow(0 0 8px var(--green));
+  }
+
+  .cap-title {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 10px;
+    line-height: 1.4;
+  }
+
+  .cap-desc {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  /* ─── WORKFLOW ────────────────────────────────────────── */
+  #workflow {
+    background: linear-gradient(180deg, var(--surface) 0%, var(--black) 100%);
+  }
+
+  .workflow-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    max-width: 760px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .workflow-container::before {
+    content: '';
+    position: absolute;
+    left: 28px;
+    top: 48px;
+    bottom: 48px;
+    width: 1px;
+    background: linear-gradient(180deg, transparent, var(--green-dim), var(--green-dim), transparent);
+    opacity: 0.4;
+  }
+
+  .wf-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 28px;
+    padding: 24px 0;
+    opacity: 0;
+    transform: translateX(-20px);
+    transition: all 0.5s;
+  }
+
+  .wf-step.visible {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .wf-num {
+    width: 56px;
+    height: 56px;
+    border: 1px solid var(--border-strong);
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--green);
+    flex-shrink: 0;
+    position: relative;
+    z-index: 1;
+    clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+    transition: all 0.3s;
+  }
+
+  .wf-step:hover .wf-num {
+    background: var(--green-dark);
+    box-shadow: 0 0 24px var(--green-glow-strong);
+  }
+
+  .wf-body {
+    flex: 1;
+    padding: 16px 20px;
+    border: 1px solid rgba(0,255,106,0.1);
+    background: rgba(0,255,106,0.02);
+    transition: all 0.3s;
+  }
+
+  .wf-step:hover .wf-body {
+    border-color: var(--border-strong);
+    background: var(--green-glow);
+  }
+
+  .wf-body h3 {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #d0ffe8;
+    margin-bottom: 6px;
+  }
+
+  .wf-body p {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.55;
+  }
+
+  .wf-tag {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    color: var(--green);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+    text-transform: uppercase;
+    margin-top: 8px;
+  }
+
+  /* ─── SHOWCASE ────────────────────────────────────────── */
+  #showcase {
+    background: var(--black);
+  }
+
+  .showcase-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+
+  .showcase-card {
+    position: relative;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    background: var(--surface2);
+    transition: all 0.4s;
+    cursor: default;
+  }
+
+  .showcase-card:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-4px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 0 30px rgba(0,255,106,0.1);
+  }
+
+  .showcase-card.large {
+    grid-column: span 2;
+  }
+
+  .showcase-img {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    display: block;
+    filter: brightness(0.75) saturate(1.1);
+    transition: all 0.4s;
+    mix-blend-mode: luminosity;
+  }
+
+  .showcase-card.large .showcase-img { height: 280px; }
+
+  .showcase-card:hover .showcase-img {
+    filter: brightness(0.9) saturate(1.3);
+    mix-blend-mode: normal;
+  }
+
+  .showcase-info {
+    padding: 18px 20px;
+  }
+
+  .showcase-info h4 {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 6px;
+  }
+
+  .showcase-info p {
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.5;
+  }
+
+  .showcase-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 40%, rgba(0,20,10,0.85) 100%);
+    pointer-events: none;
+  }
+
+  /* ─── FEATURES ────────────────────────────────────────── */
+  #features {
+    background: linear-gradient(180deg, var(--black) 0%, var(--surface) 100%);
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 16px;
+  }
+
+  .feat-card {
+    padding: 28px 24px;
+    border: 1px solid rgba(0,255,106,0.1);
+    background: rgba(0,255,106,0.02);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.35s;
+    cursor: default;
+  }
+
+  .feat-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--green-dim), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .feat-card:hover {
+    border-color: var(--border-strong);
+    background: rgba(0,255,106,0.05);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.4), 0 0 20px rgba(0,255,106,0.08);
+  }
+
+  .feat-card:hover::after { opacity: 1; }
+
+  .feat-title {
+    font-family: var(--font-display);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 10px;
+  }
+
+  .feat-desc {
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.6;
+  }
+
+  /* ─── TECH STACK ──────────────────────────────────────── */
+  #techstack {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+  }
+
+  .stack-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  .stack-item {
+    padding: 28px 20px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    text-align: center;
+    transition: all 0.3s;
+    cursor: default;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stack-item::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(0,255,106,0.06) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+
+  .stack-item:hover::before { opacity: 1; }
+
+  .stack-item:hover {
+    border-color: var(--border-strong);
+    transform: translateY(-2px);
+    box-shadow: 0 0 20px rgba(0,255,106,0.1);
+  }
+
+  .stack-name {
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: #d0ffe8;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+  }
+
+  .stack-role {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .stack-badge {
+    display: inline-block;
+    margin-top: 10px;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    color: var(--green);
+    border: 1px solid var(--border);
+    padding: 2px 8px;
+  }
+
+  /* ─── APPLICATIONS ────────────────────────────────────── */
+  #applications {
+    background: linear-gradient(180deg, var(--surface) 0%, var(--black) 100%);
+  }
+
+  .app-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+  }
+
+  .app-card {
+    padding: 32px 24px;
+    border: 1px solid rgba(0,255,106,0.1);
+    background: rgba(0,255,106,0.015);
+    transition: all 0.35s;
+    cursor: default;
+    position: relative;
+  }
+
+  .app-card::before {
+    content: attr(data-num);
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    font-family: var(--font-mono);
+    font-size: 28px;
+    font-weight: 700;
+    color: rgba(0,255,106,0.06);
+    letter-spacing: 0.05em;
+  }
+
+  .app-card:hover {
+    border-color: var(--border-strong);
+    background: var(--green-glow);
+    transform: translateY(-4px);
+  }
+
+  .app-card h3 {
+    font-family: var(--font-display);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 12px;
+  }
+
+  .app-card p {
+    font-size: 13px;
+    color: var(--text-dim);
+    line-height: 1.65;
+  }
+
+  /* ─── FOOTER ──────────────────────────────────────────── */
+  footer {
+    background: var(--black);
+    border-top: 1px solid var(--border);
+    padding: 60px;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 40px;
+  }
+
+  .footer-brand {
+    font-family: var(--font-display);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.3em;
+    color: var(--green);
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .footer-copy {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.1em;
+  }
+
+  .footer-links {
+    display: flex;
+    gap: 36px;
+  }
+
+  .footer-link {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .footer-link-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    letter-spacing: 0.3em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+
+  .footer-link a {
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-dim);
+    text-decoration: none;
+    letter-spacing: 0.04em;
+    transition: color 0.25s;
+  }
+
+  .footer-link a:hover { color: var(--green); }
+
+  .footer-bottom {
+    width: 100%;
+    padding-top: 28px;
+    border-top: 1px solid rgba(0,255,106,0.06);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+  }
+
+  .status-dot {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .status-dot::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 2s infinite;
+  }
+
+  /* ─── DIVIDER ─────────────────────────────────────────── */
+  .divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, var(--border-strong) 30%, var(--green-dim) 50%, var(--border-strong) 70%, transparent 100%);
+    margin: 0;
+  }
+
+  /* ─── ANIMATIONS ──────────────────────────────────────── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeLeft {
+    from { opacity: 0; transform: translateX(24px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; box-shadow: 0 0 8px var(--green); }
+    50%       { opacity: 0.5; box-shadow: 0 0 3px var(--green); }
+  }
+
+  @keyframes pulseWidth {
+    0%, 100% { width: 40px; opacity: 0.6; }
+    50%       { width: 60px; opacity: 1; }
+  }
+
+  @keyframes scanline {
+    0% { transform: translateY(-100%); }
+    100% { transform: translateY(100vh); }
+  }
+
+  /* scanline atmosphere */
+  .scanline {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(0,255,106,0.04), transparent);
+    pointer-events: none;
+    z-index: 9999;
+    animation: scanline 8s linear infinite;
+  }
+
+  /* scroll reveal */
+  .reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.7s, transform 0.7s;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ─── RESPONSIVE ──────────────────────────────────────── */
+  @media (max-width: 1024px) {
+    nav { padding: 16px 30px; }
+    section { padding: 80px 30px; }
+    .overview-grid { grid-template-columns: 1fr; }
+    .cap-grid { grid-template-columns: repeat(2, 1fr); }
+    .stack-grid { grid-template-columns: repeat(2, 1fr); }
+    .app-grid { grid-template-columns: repeat(2, 1fr); }
+    .showcase-grid { grid-template-columns: 1fr; }
+    .showcase-card.large { grid-column: span 1; }
+    footer { padding: 40px 30px; }
+    .hero-stats { right: 30px; }
+  }
+
+  @media (max-width: 640px) {
+    nav { padding: 14px 20px; }
+    .nav-links { display: none; }
+    section { padding: 60px 20px; }
+    #hero { padding: 100px 20px 60px; }
+    .cap-grid { grid-template-columns: 1fr; }
+    .stack-grid { grid-template-columns: repeat(2, 1fr); }
+    .app-grid { grid-template-columns: 1fr; }
+    .hero-stats { display: none; }
+    footer { padding: 32px 20px; flex-direction: column; }
+    .footer-links { flex-direction: column; gap: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="scanline"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">CMDA · BOT</div>
+  <ul class="nav-links">
+    <li><a href="#overview">Overview</a></li>
+    <li><a href="#workflow">Workflow</a></li>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#techstack">Stack</a></li>
+    <li><a href="#applications">Applications</a></li>
+  </ul>
+  <a href="https://github.com/thevinaykumar" target="_blank" class="nav-cta">GitHub Profile</a>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-overlay"></div>
+
+  <div class="hero-content">
+    <div class="hero-label">AI-Powered Automation Infrastructure</div>
+    <h1 class="hero-title">Cryptocurrency<br>Market Data<br>Analysis Bot</h1>
+    <p class="hero-subtitle">
+      Automated Cryptocurrency Market Monitoring &amp; Intelligent Trading Workflow Infrastructure
+    </p>
+    <div class="hero-actions">
+      <a href="#workflow" class="btn-primary">Explore System</a>
+      <a href="https://github.com/thevinaykumar" target="_blank" class="btn-ghost">GitHub Profile</a>
+    </div>
+  </div>
+
+  <div class="hero-stats">
+    <div class="hero-stat">System Status <span>ACTIVE</span></div>
+    <div class="hero-stat">Platform <span>UiPath Studio</span></div>
+    <div class="hero-stat">Data Source <span>CoinMarketCap</span></div>
+    <div class="hero-stat">Automation <span>CONTINUOUS</span></div>
+  </div>
+
+  <div class="scroll-indicator">
+    <span class="scroll-line"></span>
+    Scroll to Explore
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- OVERVIEW -->
+<section id="overview">
+  <div class="section-label">Project Overview</div>
+  <div class="section-title">Operational Intelligence<br>at Market Speed</div>
+  <p class="section-desc">
+    A fully automated cryptocurrency intelligence system that continuously monitors Bitcoin price movements, applies OCR-based extraction, evaluates threshold logic, and delivers structured analytical reports — eliminating manual intervention at every stage.
+  </p>
+
+  <div class="overview-grid">
+    <div class="overview-visual reveal">
+      <img
+        src="814d4585333cc771a11cf713e5795654.jpg"
+        alt="CoinMarketCap Live Market Data"
+        class="overview-img"
+        onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"
+      >
+      <div style="display:none;height:320px;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:11px;color:var(--text-muted);letter-spacing:0.2em;text-transform:uppercase;">
+        [ Market Data Feed ]
+      </div>
+      <div class="overlay" style="position:absolute;inset:0;background:linear-gradient(135deg,var(--green-glow) 0%,transparent 60%);pointer-events:none;"></div>
+      <div class="overview-img-label">Live Market Feed · CoinMarketCap</div>
+    </div>
+
+    <ul class="overview-points reveal">
+      <li class="overview-point">
+        <div class="point-icon">01</div>
+        <div class="point-content">
+          <h4>Automated Market Surveillance</h4>
+          <p>Continuous Bitcoin price monitoring via CoinMarketCap, extracted automatically without human intervention on each cycle.</p>
+        </div>
+      </li>
+      <li class="overview-point">
+        <div class="point-icon">02</div>
+        <div class="point-content">
+          <h4>OCR-Powered Data Extraction</h4>
+          <p>Computer Vision and OCR pipelines convert live price screenshots into structured numerical data for downstream processing.</p>
+        </div>
+      </li>
+      <li class="overview-point">
+        <div class="point-icon">03</div>
+        <div class="point-content">
+          <h4>Threshold-Based Decision Logic</h4>
+          <p>Intelligent evaluation compares extracted prices against buy/sell thresholds, triggering automated action workflows.</p>
+        </div>
+      </li>
+      <li class="overview-point">
+        <div class="point-icon">04</div>
+        <div class="point-content">
+          <h4>Automated Reporting &amp; Alerts</h4>
+          <p>Timestamped Excel reports and SMTP email notifications are generated on every monitoring cycle, ensuring zero reporting gaps.</p>
+        </div>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- CAPABILITIES -->
+<section id="capabilities">
+  <div class="section-label">System Capabilities</div>
+  <div class="section-title">Core Intelligence Modules</div>
+
+  <div class="cap-grid reveal">
+    <div class="cap-card">
+      <div class="cap-icon">◉</div>
+      <div class="cap-title">Real-Time Market Monitoring</div>
+      <p class="cap-desc">Perpetual surveillance of live Bitcoin price data across market sessions without manual triggers.</p>
+    </div>
+    <div class="cap-card">
+      <div class="cap-icon">⬡</div>
+      <div class="cap-title">Intelligent Workflow Automation</div>
+      <p class="cap-desc">End-to-end UiPath automation sequences orchestrating multi-step data extraction and decision pipelines.</p>
+    </div>
+    <div class="cap-card">
+      <div class="cap-icon">◈</div>
+      <div class="cap-title">OCR-Based Data Extraction</div>
+      <p class="cap-desc">Computer Vision modules transform visual price data into structured, processable string values with high fidelity.</p>
+    </div>
+    <div class="cap-card">
+      <div class="cap-icon">⬢</div>
+      <div class="cap-title">Automated Analytical Reporting</div>
+      <p class="cap-desc">Timestamped Excel workbook logging of every monitoring cycle, creating an auditable operational data trail.</p>
+    </div>
+    <div class="cap-card">
+      <div class="cap-icon">◎</div>
+      <div class="cap-title">AI-Assisted Decision Support</div>
+      <p class="cap-desc">Threshold-driven buy/sell signal generation providing intelligent operational context for every data point.</p>
+    </div>
+    <div class="cap-card">
+      <div class="cap-icon">⬟</div>
+      <div class="cap-title">Intelligent Notification System</div>
+      <p class="cap-desc">SMTP email alert delivery ensuring critical market signals reach stakeholders instantaneously.</p>
+    </div>
+    <div class="cap-card">
+      <div class="cap-icon">⬠</div>
+      <div class="cap-title">Continuous Monitoring Infrastructure</div>
+      <p class="cap-desc">Always-on operational loop designed for sustained market surveillance across any timeframe.</p>
+    </div>
+    <div class="cap-card">
+      <div class="cap-icon">◫</div>
+      <div class="cap-title">Threshold-Based Operational Logic</div>
+      <p class="cap-desc">Configurable buy/sell boundary parameters enabling adaptive monitoring strategy across market conditions.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- WORKFLOW -->
+<section id="workflow">
+  <div class="section-label">System Architecture</div>
+  <div class="section-title">Automated Workflow Pipeline</div>
+  <p class="section-desc">
+    A precisely orchestrated seven-stage operational pipeline — from raw market data access to intelligent reporting delivery.
+  </p>
+
+  <div class="workflow-container">
+    <div class="wf-step reveal">
+      <div class="wf-num">01</div>
+      <div class="wf-body">
+        <h3>Market Website Access</h3>
+        <p>UiPath Browser Automation navigates to CoinMarketCap, establishing a live connection to real-time cryptocurrency market data.</p>
+        <span class="wf-tag">Browser Automation · UiPath</span>
+      </div>
+    </div>
+    <div class="wf-step reveal">
+      <div class="wf-num">02</div>
+      <div class="wf-body">
+        <h3>Live Bitcoin Price Extraction</h3>
+        <p>Get Text activity selects the live Bitcoin price element, capturing the raw price string directly from the DOM.</p>
+        <span class="wf-tag">Get Text · DOM Extraction</span>
+      </div>
+    </div>
+    <div class="wf-step reveal">
+      <div class="wf-num">03</div>
+      <div class="wf-body">
+        <h3>OCR / Image Processing</h3>
+        <p>Computer Vision and UiPath OCR modules process price screenshots, converting visual data into structured text strings.</p>
+        <span class="wf-tag">Computer Vision · OCR Processing</span>
+      </div>
+    </div>
+    <div class="wf-step reveal">
+      <div class="wf-num">04</div>
+      <div class="wf-body">
+        <h3>Structured Data Conversion</h3>
+        <p>CDbl() conversion and string replacement operations transform raw price text into clean, comparable numeric values.</p>
+        <span class="wf-tag">Data Transformation · VB.NET</span>
+      </div>
+    </div>
+    <div class="wf-step reveal">
+      <div class="wf-num">05</div>
+      <div class="wf-body">
+        <h3>Threshold Logic Evaluation</h3>
+        <p>Conditional If/Else logic compares current price against configurable buy/sell thresholds, determining action signal.</p>
+        <span class="wf-tag">Conditional Logic · Decision Engine</span>
+      </div>
+    </div>
+    <div class="wf-step reveal">
+      <div class="wf-num">06</div>
+      <div class="wf-body">
+        <h3>Buy / Sell Decision Workflow</h3>
+        <p>Action assignment and Message Box alert generation notifies operators of triggered buy or sell conditions in real-time.</p>
+        <span class="wf-tag">Signal Generation · Alert Dispatch</span>
+      </div>
+    </div>
+    <div class="wf-step reveal">
+      <div class="wf-num">07</div>
+      <div class="wf-body">
+        <h3>Automated Reporting &amp; Notifications</h3>
+        <p>Write Range Workbook writes timestamped records to CryptoData.xlsx; Send SMTP Email dispatches Crypto Alert to registered recipients.</p>
+        <span class="wf-tag">Excel Logging · SMTP Notification</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- SHOWCASE -->
+<section id="showcase">
+  <div class="section-label">Visual Showcase</div>
+  <div class="section-title">Workflow Intelligence in Action</div>
+  <p class="section-desc">
+    Live operational captures across every automation stage — from market data access through intelligent report generation.
+  </p>
+
+  <div class="showcase-grid">
+    <div class="showcase-card large reveal">
+      <img
+        src="5d0c6810e6bb69ad11fff310ff32672f.png"
+        alt="Live Bitcoin Price Feed"
+        class="showcase-img"
+        onerror="this.style.background='var(--surface2)';this.style.height='280px';this.alt=''"
+      >
+      <div class="showcase-overlay"></div>
+      <div class="showcase-info">
+        <h4>Live Market Price Feed</h4>
+        <p>Real-time Bitcoin price at $110,427 captured from CoinMarketCap — primary extraction target for the monitoring pipeline.</p>
+      </div>
+    </div>
+    <div class="showcase-card reveal">
+      <img
+        src="Screenshot_2026-05-23_at_4_48_15_PM.png"
+        alt="UiPath Workflow — Price Extraction"
+        class="showcase-img"
+        onerror="this.style.background='var(--surface2)';this.style.height='220px';this.alt=''"
+      >
+      <div class="showcase-overlay"></div>
+      <div class="showcase-info">
+        <h4>Extraction Sequence</h4>
+        <p>UiPath sequence automating CoinMarketCap access and live Get Text price extraction activity.</p>
+      </div>
+    </div>
+    <div class="showcase-card reveal">
+      <img
+        src="Screenshot_2026-05-23_at_4_48_28_PM.png"
+        alt="UiPath Workflow — Data Conversion"
+        class="showcase-img"
+        onerror="this.style.background='var(--surface2)';this.style.height='220px';this.alt=''"
+      >
+      <div class="showcase-overlay"></div>
+      <div class="showcase-info">
+        <h4>Data Conversion Layer</h4>
+        <p>Assign activities performing CDbl() conversion and threshold variable declaration for decision logic.</p>
+      </div>
+    </div>
+    <div class="showcase-card reveal">
+      <img
+        src="Screenshot_2026-05-23_at_4_48_39_PM.png"
+        alt="UiPath Workflow — Buy/Sell Decision"
+        class="showcase-img"
+        onerror="this.style.background='var(--surface2)';this.style.height='220px';this.alt=''"
+      >
+      <div class="showcase-overlay"></div>
+      <div class="showcase-info">
+        <h4>Decision Intelligence Engine</h4>
+        <p>Conditional If block evaluating currentPrice vs buyThreshold, triggering BUY action and signal alert.</p>
+      </div>
+    </div>
+    <div class="showcase-card reveal">
+      <img
+        src="Screenshot_2026-05-23_at_4_48_52_PM.png"
+        alt="UiPath Workflow — Email Notification"
+        class="showcase-img"
+        onerror="this.style.background='var(--surface2)';this.style.height='220px';this.alt=''"
+      >
+      <div class="showcase-overlay"></div>
+      <div class="showcase-info">
+        <h4>Automated Email Alert</h4>
+        <p>Send SMTP Email activity dispatching Crypto Alert notifications upon buy/sell signal detection.</p>
+      </div>
+    </div>
+    <div class="showcase-card reveal">
+      <img
+        src="Screenshot_2026-05-23_at_4_49_00_PM.png"
+        alt="UiPath Workflow — Excel Reporting"
+        class="showcase-img"
+        onerror="this.style.background='var(--surface2)';this.style.height='220px';this.alt=''"
+      >
+      <div class="showcase-overlay"></div>
+      <div class="showcase-info">
+        <h4>Excel Report Generation</h4>
+        <p>Write Range Workbook activity logging timestamped market data records into CryptoData.xlsx operational report.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- FEATURES -->
+<section id="features">
+  <div class="section-label">Feature Architecture</div>
+  <div class="section-title">Platform Capabilities</div>
+
+  <div class="features-grid">
+    <div class="feat-card reveal">
+      <div class="feat-title">Real-Time Cryptocurrency Monitoring</div>
+      <p class="feat-desc">Perpetual market surveillance extracting live Bitcoin price data on every execution cycle without manual intervention.</p>
+    </div>
+    <div class="feat-card reveal">
+      <div class="feat-title">OCR-Based Price Extraction</div>
+      <p class="feat-desc">Computer Vision modules process price screenshots, transforming visual market data into structured numeric values.</p>
+    </div>
+    <div class="feat-card reveal">
+      <div class="feat-title">Automated Workflow Pipelines</div>
+      <p class="feat-desc">End-to-end UiPath sequences orchestrate multi-stage extraction, evaluation and reporting with zero human touchpoints.</p>
+    </div>
+    <div class="feat-card reveal">
+      <div class="feat-title">Excel Reporting Integration</div>
+      <p class="feat-desc">Automated Write Range Workbook operations create timestamped CryptoData.xlsx records maintaining full operational audit trails.</p>
+    </div>
+    <div class="feat-card reveal">
+      <div class="feat-title">Buy/Sell Threshold Analysis</div>
+      <p class="feat-desc">Configurable threshold parameters evaluate market prices against defined buy/sell boundaries, generating intelligent action signals.</p>
+    </div>
+    <div class="feat-card reveal">
+      <div class="feat-title">Intelligent Notification Delivery</div>
+      <p class="feat-desc">SMTP email alerts deliver Crypto Alert notifications upon signal detection, ensuring zero latency stakeholder communication.</p>
+    </div>
+    <div class="feat-card reveal">
+      <div class="feat-title">Continuous Monitoring Infrastructure</div>
+      <p class="feat-desc">Always-active operational loop designed for sustained, uninterrupted market surveillance across extended timeframes.</p>
+    </div>
+    <div class="feat-card reveal">
+      <div class="feat-title">Workflow Orchestration</div>
+      <p class="feat-desc">Hierarchical UiPath Main Sequence architecture coordinating all automation modules within a unified operational framework.</p>
+    </div>
+    <div class="feat-card reveal">
+      <div class="feat-title">Market Anomaly Tracking</div>
+      <p class="feat-desc">Threshold logic detects price deviations from defined boundaries, flagging anomalous market conditions for immediate operator review.</p>
+    </div>
+    <div class="feat-card reveal">
+      <div class="feat-title">Operational Reporting Systems</div>
+      <p class="feat-desc">Structured data tables logging timestamp, current price, previous price, action taken, and execution status per cycle.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- TECH STACK -->
+<section id="techstack">
+  <div class="section-label">Technology Infrastructure</div>
+  <div class="section-title">Operational Stack</div>
+  <p class="section-desc">
+    Enterprise-grade automation infrastructure built on industry-leading RPA and data engineering platforms.
+  </p>
+
+  <div class="stack-grid reveal">
+    <div class="stack-item">
+      <div class="stack-name">UiPath Studio</div>
+      <div class="stack-role">Primary Automation Engine</div>
+      <div class="stack-badge">RPA PLATFORM</div>
+    </div>
+    <div class="stack-item">
+      <div class="stack-name">Python</div>
+      <div class="stack-role">Data Processing Logic</div>
+      <div class="stack-badge">SCRIPTING</div>
+    </div>
+    <div class="stack-item">
+      <div class="stack-name">Computer Vision</div>
+      <div class="stack-role">OCR Extraction Engine</div>
+      <div class="stack-badge">AI MODULE</div>
+    </div>
+    <div class="stack-item">
+      <div class="stack-name">Excel / XLSX</div>
+      <div class="stack-role">Analytical Reporting</div>
+      <div class="stack-badge">DATA LAYER</div>
+    </div>
+    <div class="stack-item">
+      <div class="stack-name">SMTP Mail</div>
+      <div class="stack-role">Notification Infrastructure</div>
+      <div class="stack-badge">ALERTING</div>
+    </div>
+    <div class="stack-item">
+      <div class="stack-name">VB.NET</div>
+      <div class="stack-role">Expression Engine</div>
+      <div class="stack-badge">LOGIC LAYER</div>
+    </div>
+    <div class="stack-item">
+      <div class="stack-name">CoinMarketCap</div>
+      <div class="stack-role">Live Market Data Source</div>
+      <div class="stack-badge">DATA SOURCE</div>
+    </div>
+    <div class="stack-item">
+      <div class="stack-name">Workflow Automation</div>
+      <div class="stack-role">Orchestration Framework</div>
+      <div class="stack-badge">PIPELINE</div>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- APPLICATIONS -->
+<section id="applications">
+  <div class="section-label">Real-World Applications</div>
+  <div class="section-title">Operational Use Cases</div>
+  <p class="section-desc">
+    Built for genuine enterprise deployment — this system addresses critical market intelligence needs across financial operations environments.
+  </p>
+
+  <div class="app-grid">
+    <div class="app-card reveal" data-num="01">
+      <h3>Cryptocurrency Market Surveillance</h3>
+      <p>Automated 24/7 Bitcoin price monitoring for trading desks, investment firms, and fintech platforms requiring continuous market intelligence without staffing overhead.</p>
+    </div>
+    <div class="app-card reveal" data-num="02">
+      <h3>Investor Decision-Support Systems</h3>
+      <p>Structured buy/sell signal generation assists portfolio managers and retail investors with data-driven entry and exit point identification in volatile markets.</p>
+    </div>
+    <div class="app-card reveal" data-num="03">
+      <h3>Smart Operational Reporting</h3>
+      <p>Automated timestamped Excel report generation replaces manual price logging, enabling audit-ready operational documentation at scale.</p>
+    </div>
+    <div class="app-card reveal" data-num="04">
+      <h3>Financial Operations Automation</h3>
+      <p>Eliminates manual market monitoring tasks within financial operations teams, redirecting analyst time toward higher-value strategic activities.</p>
+    </div>
+    <div class="app-card reveal" data-num="05">
+      <h3>Analytical Anomaly Detection</h3>
+      <p>Threshold breach detection identifies statistically significant price movements, enabling rapid operator response to market disruptions.</p>
+    </div>
+    <div class="app-card reveal" data-num="06">
+      <h3>Automated Reporting Ecosystems</h3>
+      <p>Pluggable reporting pipeline integrates with broader BI and data warehouse environments, feeding market data into enterprise analytical infrastructure.</p>
+    </div>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- FOOTER -->
+<footer>
+  <div>
+    <div class="footer-brand">Cryptocurrency Market Data Analysis Bot</div>
+    <div class="footer-copy">AI-Powered Automation Infrastructure · Built with UiPath Studio</div>
+  </div>
+
+  <div class="footer-links">
+    <div class="footer-link">
+      <span class="footer-link-label">GitHub</span>
+      <a href="https://github.com/thevinaykumar" target="_blank">github.com/thevinaykumar</a>
+    </div>
+    <div class="footer-link">
+      <span class="footer-link-label">LinkedIn</span>
+      <a href="https://linkedin.com/in/thevinaykumar57" target="_blank">linkedin.com/in/thevinaykumar57</a>
+    </div>
+    <div class="footer-link">
+      <span class="footer-link-label">Email</span>
+      <a href="mailto:thevinaykumar57@gmail.com">thevinaykumar57@gmail.com</a>
+    </div>
+  </div>
+
+  <div class="footer-bottom">
+    <span class="status-dot">System Operational</span>
+    <span>© 2026 · Vinay Kumar · All rights reserved</span>
+  </div>
+</footer>
+
+<script>
+  // Scroll reveal
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        // staggered children
+        const steps = e.target.querySelectorAll ? [] : [];
+      }
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // Workflow steps staggered reveal
+  const wfObserver = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('visible'), i * 100);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.wf-step').forEach(el => wfObserver.observe(el));
+
+  // Nav scroll effect
+  window.addEventListener('scroll', () => {
+    const nav = document.querySelector('nav');
+    if (window.scrollY > 60) {
+      nav.style.background = 'rgba(2,5,4,0.97)';
+      nav.style.borderBottom = '1px solid rgba(0,255,106,0.12)';
+    } else {
+      nav.style.background = '';
+      nav.style.borderBottom = '';
+    }
+  });
+</script>
+</body>
+</html>
